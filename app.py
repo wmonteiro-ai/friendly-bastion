@@ -97,6 +97,9 @@ if submit:
         display_df = results[DISPLAY_COLUMNS]
         for col in ['percentage_current_band', 'proposed_increase_pct']:
             display_df[col] = display_df[col]/100
+
+        for col in ['is_critical_position_or_successor', 'high_performers_low_band']:
+            display_df[col] = display_df[col].astype(bool)
         
         display_df = display_df.sort_values(by="priority_score", ascending=False).rename(
             columns=RENAMED_LABELS).style.format({
