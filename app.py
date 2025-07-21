@@ -25,7 +25,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-@st.cache_data
+
 def run_optimization(df, _weights, _budget_pct, _max_increase_percentage_bound):
     """
     Runs the full optimization process.
@@ -60,61 +60,63 @@ st.markdown("This is a tool I've created with Streamlit to make it easy to test 
 # sidebar
 with st.sidebar:
     st.header("Strategy")
-    
-    st.subheader("Total Budget")
-    budget_pct = st.slider(
-        "% of the current payroll", 
-        min_value=1.0, max_value=10.0, value=2.5, step=0.1, format="%.1f%%"
-    ) / 100
-    
-    max_increase_percentage_bound = st.slider("Maximum salary increase for an employee (%)", 1, 20, 15)
 
-    st.subheader("Weights (0 to 100)")
-    st.caption("Under the hood we will balance all weights, making sure the total of all weights always equals 100%")
-    slider_weights = {
-        'is_talent': st.slider("Importance of being a Talent", 0, 100, 50),
-        'is_exceeding_expectations_last_year': st.slider("Importance of being a High Performer", 0, 100, 50),
-        'high_performers_low_band': st.slider("Importance of prioritizing High Performers in lower salary bands", 0, 100, 50),
+    with st.form("form", border=False):
+        st.subheader("Total Budget")
+        budget_pct = st.slider(
+            "% of the current payroll", 
+            min_value=1.0, max_value=10.0, value=2.5, step=0.1, format="%.1f%%"
+        ) / 100
         
-        'is_critical_position_or_successor': st.slider("Importance of being in a critical position or a critical position successor", 0, 100, 50),
-        
-        'zscore_years_without_promotion_or_merit_for_hr_group': st.slider("Importance of being too long without merit or promotion (vs. pairs)", 0, 100, 50),
-        
-        'percentage_current_band_inv': st.slider("Importance of being in lower salary bands", 0, 100, 50),
-        'percentage_increase_last_12months_inv': st.slider("Importance of receiving lower salary increases in the last 12 months", 0, 100, 50),
-    }
+        max_increase_percentage_bound = st.slider("Maximum salary increase for an employee (%)", 1, 20, 15)
     
-    if st.button("Run optimization", type="primary", use_container_width=True):
-        with st.spinner("Optimizing... It should take at least 30 seconds."):
-            results, summary = run_optimization(df_original, slider_weights, budget_pct, max_increase_percentage_bound)
-            if results is not None:
-                results.index.names = ['Employee ID']
-                display_df = results[DISPLAY_COLUMNS]
-                for col in ['percentage_current_band', 'proposed_increase_pct']:
-                    display_df[col] = display_df[col]/100
+        st.subheader("Weights (0 to 100)")
+        st.caption("Under the hood we will balance all weights, making sure the total of all weights always equals 100%")
+        slider_weights = {
+            'is_talent': st.slider("Importance of being a Talent", 0, 100, 50),
+            'is_exceeding_expectations_last_year': st.slider("Importance of being a High Performer", 0, 100, 50),
+            'high_performers_low_band': st.slider("Importance of prioritizing High Performers in lower salary bands", 0, 100, 50),
+            
+            'is_critical_position_or_successor': st.slider("Importance of being in a critical position or a critical position successor", 0, 100, 50),
+            
+            'zscore_years_without_promotion_or_merit_for_hr_group': st.slider("Importance of being too long without merit or promotion (vs. pairs)", 0, 100, 50),
+            
+            'percentage_current_band_inv': st.slider("Importance of being in lower salary bands", 0, 100, 50),
+            'percentage_increase_last_12months_inv': st.slider("Importance of receiving lower salary increases in the last 12 months", 0, 100, 50),
+        }
 
-                for col in ['high_performers_low_band', 'is_critical_position_or_successor']:
-                    display_df[col] = display_df[col].astype(bool)
-                
-                display_df = display_df.sort_values(by="priority_score", ascending=False).rename(
-                    columns=RENAMED_LABELS).style.format({
-                    RENAMED_LABELS["priority_score"]: "{:.2f}",
-                    RENAMED_LABELS["years_without_promotion_or_merit"]: "{:.2f}",
-                    RENAMED_LABELS["gross_base_salary"]: "R$ {:,.2f}",
-                    RENAMED_LABELS["percentage_current_band"]: "{:.1%}",
-                    RENAMED_LABELS["proposed_increase_pct"]: "{:.1%}",
-                    RENAMED_LABELS["recommended_increase"]: "R$ {:,.2f}",
-                    RENAMED_LABELS["lead_monthly_budget"]: "R$ {:,.2f}",
-                    RENAMED_LABELS["recommended_increase"]: "R$ {:,.2f}",
-                    RENAMED_LABELS["new_gross_base_salary"]: "R$ {:,.2f}"
-                })
+        submit = st.form_submit_button('Run optimization', use_container_width=True)
+
+if submit:
+    if 'results' in st.session_state:
+        del st.session_state['results']
+
+    results, summary = run_optimization(df_original, slider_weights, budget_pct, max_increase_percentage_bound)
+    if results is not None:
+        results.index.names = ['Employee ID']
+        display_df = results[DISPLAY_COLUMNS]
+        for col in ['percentage_current_band', 'proposed_increase_pct']:
+            display_df[col] = display_df[col]/100
         
-                st.session_state['display'] = display_df
-                st.session_state['results'] = results
-                st.session_state['summary'] = summary
-                st.session_state['weights'] = slider_weights
-            else:
-                st.error("We were unable to find a feasible solution. Try adjusting your weights and try again.")
+        display_df = display_df.sort_values(by="priority_score", ascending=False).rename(
+            columns=RENAMED_LABELS).style.format({
+            RENAMED_LABELS["priority_score"]: "{:.2f}",
+            RENAMED_LABELS["gross_base_salary"]: "R$ {:,.2f}",
+            RENAMED_LABELS["percentage_current_band"]: "{:.1%}",
+            RENAMED_LABELS["proposed_increase_pct"]: "{:.1%}",
+            RENAMED_LABELS["recommended_increase"]: "R$ {:,.2f}",
+            RENAMED_LABELS["lead_monthly_budget"]: "R$ {:,.2f}",
+            RENAMED_LABELS["recommended_increase"]: "R$ {:,.2f}",
+            RENAMED_LABELS["new_gross_base_salary"]: "R$ {:,.2f}"
+        })
+
+        st.session_state['display'] = display_df
+        st.session_state['results'] = results
+        st.session_state['summary'] = summary
+        st.session_state['weights'] = slider_weights
+    else:
+        st.error("We were unable to find a feasible solution. Try adjusting your weights and try again.")
+    submit = False
 
 
 # main results section
@@ -317,4 +319,4 @@ if 'results' in st.session_state:
         st.dataframe(display_df, use_container_width=True)
 
 else:
-    st.info("Modify the weights in the sidebar and click on the _Optimize_ button to see the results.")
+    st.info("Modify the weights in the sidebar and click on the _Run optimization_ button to see the results.")
