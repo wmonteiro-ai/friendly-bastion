@@ -92,10 +92,14 @@ with st.sidebar:
                 display_df = results[DISPLAY_COLUMNS]
                 for col in ['percentage_current_band', 'proposed_increase_pct']:
                     display_df[col] = display_df[col]/100
+
+                for col in ['high_performers_low_band', 'is_critical_position_or_successor']
+                    display_df[col] = display_df[col].astype(bool)
                 
                 display_df = display_df.sort_values(by="priority_score", ascending=False).rename(
                     columns=RENAMED_LABELS).style.format({
                     RENAMED_LABELS["priority_score"]: "{:.2f}",
+                    RENAMED_LABELS["years_without_promotion_or_merit"]: "{:.2f}",
                     RENAMED_LABELS["gross_base_salary"]: "R$ {:,.2f}",
                     RENAMED_LABELS["percentage_current_band"]: "{:.1%}",
                     RENAMED_LABELS["proposed_increase_pct"]: "{:.1%}",
