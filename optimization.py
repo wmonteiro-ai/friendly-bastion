@@ -248,7 +248,7 @@ def get_diminishing_returns_model(df: pd.DataFrame, total_budget: float, max_inc
 
         # get the sum of the new salaries for this team
         sum_of_new_increases = pulp.lpSum([
-            pulp.lpSum([gets_pct[i][p] for p in pct_points]) for i in employees_of_lead
+            pulp.lpSum([df.loc[i, 'gross_base_salary'] * (gets_pct[i][p] / 100.0) for p in pct_points]) for i in employees_of_lead
         ])
 
         # adding the constraint to the model.
