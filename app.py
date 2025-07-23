@@ -104,6 +104,7 @@ if submit:
         display_df = display_df.sort_values(by="priority_score", ascending=False).rename(
             columns=RENAMED_LABELS).style.format({
             RENAMED_LABELS["priority_score"]: "{:.2f}",
+            RENAMED_LABELS["years_without_promotion_or_merit"]: "{:.2f}",
             RENAMED_LABELS["gross_base_salary"]: "R$ {:,.2f}",
             RENAMED_LABELS["percentage_current_band"]: "{:.1%}",
             RENAMED_LABELS["proposed_increase_pct"]: "{:.1%}",
